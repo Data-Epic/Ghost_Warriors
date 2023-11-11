@@ -9,7 +9,6 @@ import datetime as dt
 
 def main():
     # Access keys using dotenv
-    PROJECT_KEY
     
     GSPREAD_KEY = os.environ["api_key"]
     WEATHER_API = os.environ["weather_api"]
