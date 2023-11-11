@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: "github_actions"
   workflow_dispatch:
+  
+env: 
+  weather_api: ${{ secrets.WEATHER_API }}
+  api_key:  ${{ secrets.API_KEY }}
 
 jobs:
   build:
