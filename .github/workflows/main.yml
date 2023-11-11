@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - github_actions
-  workflow_dispatch
+  workflow_dispatch:
 
 env:
   weather_api: ${{ secrets.WEATHER_API }}
