@@ -32,7 +32,7 @@ jobs:
         echo "${{ secrets.WEATHER_API }}" | base64 -d > weather_api.json
  
   test:
-    needs: build 
+    needs: [build, access]
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 4
