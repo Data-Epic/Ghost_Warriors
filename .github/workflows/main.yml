@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: "github_actions"
   workflow_dispatch:
-  
 env: 
   weather_api: ${{ secrets.WEATHER_API }}
   api_key:  ${{ secrets.GSPREAD_KEY }}
@@ -22,6 +21,16 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov
 
+  access:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Use gspread
+      run: |
+        echo "${{ secrets.GSPREAD_KEY }}" | base64 -d > gspread-key.json
+        echo "${{ secrets.WEATHER_API }}" | base64 -d > weather_api.json
+ 
   test:
     needs: build 
     runs-on: ${{ matrix.os }}

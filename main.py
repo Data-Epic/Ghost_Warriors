@@ -9,17 +9,17 @@ import datetime as dt
 
 def main():
     # Access keys using dotenv
-    
-    GSPREAD_KEY = os.environ.get("api_key")
-    WEATHER_API = os.environ.get("weather_api")
+    load_dotenv()
+    GSPREAD_KEY = os.getenv('PROJECT_KEY')
+    WEATHER_API = os.getenv('API_KEY')
 
     # Create a connection to the Google Sheets
-    gc = gspread.service_account(GSPREAD_KEY)
+    gc = gspread.service_account(filename='gspread-key.json')
     spreadsheet = gc.open("Gspread practice")
 
     logging.basicConfig(level=logging.INFO)
 
-    with open(WEATHER_API) as json_data_file:
+    with open('weather_api.json') as json_data_file:
         config = json.load(json_data_file)
 
     payload = {'Key': config['Key'], 'q' : "berlin", 'aqi': 'no'}
@@ -50,7 +50,7 @@ def pass_json_into_df(r):
       'location.lat': 'latitude',
       'location.lon' : 'longitude',
       'current.wind_dir': 'wind_direction',
-      'currrent.wind_degree': 'wi_degree',
+      'currrent.wind_degree': 'wind_degree',
       'location.localtime_epoch': 'Localtime_epoch'
       }, inplace=True)  
     
