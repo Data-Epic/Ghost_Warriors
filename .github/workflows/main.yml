@@ -9,7 +9,7 @@ on:
   
 env: 
   weather_api: ${{ secrets.WEATHER_API }}
-  api_key:  ${{ secrets.API_KEY }}
+  api_key:  ${{ secrets.GSPREAD_KEY }}
 
 jobs:
   build:
