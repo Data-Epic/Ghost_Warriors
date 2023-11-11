@@ -9,9 +9,10 @@ import datetime as dt
 
 def main():
     # Access keys using dotenv
-    load_dotenv()
-    GSPREAD_KEY = os.getenv('PROJECT_KEY')
-    WEATHER_API = os.getenv('API_KEY')
+    PROJECT_KEY
+    
+    GSPREAD_KEY = os.environ["api_key"]
+    WEATHER_API = os.environ["weather_api"]
 
     # Create a connection to the Google Sheets
     gc = gspread.service_account(GSPREAD_KEY)
