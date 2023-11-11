@@ -96,6 +96,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-cov
-
+      - name: Configure Secrets
+        run: |
+          echo "${{ secrets.GSPREAD_KEY }}" | base64 -d > gspread-key.json
+          echo "${{ secrets.WEATHER_API }}" | base64 -d > weather_api.json
+          
       - name: Check Test Coverage
         run: pytest test_main.py --cov-config=.coveragerc --cov=main
