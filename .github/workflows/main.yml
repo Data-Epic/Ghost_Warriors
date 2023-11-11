@@ -21,8 +21,36 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov
 
+  access:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Use gspread
+      run: |
+        echo "${{ secrets.GSPREAD_KEY }}" | base64 -d > gspread-key.json
+        echo "${{ secrets.WEATHER_API }}" | base64 -d > weather_api.json
+ 
+
+  test connection:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      - name: Use gspread and weather api
+        run: |
+          echo "${{ secrets.GSPREAD_KEY }}" | base64 -d > gspread-key.json
+          echo "${{ secrets.WEATHER_API }}" | base64 -d > weather_api.json  
+      - name: Run test for successful worksheet creation
+        run: pytest -v -k test_for_successful_worksheet_creation
+      
   test:
-    needs: [build, access]
+    needs: build
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 4
@@ -30,7 +58,7 @@ jobs:
             os: [ubuntu-latest, windows-latest]
             python-version: ["3.9", "3.10", "3.11"]
       fail-fast: false
-          
+      
     steps:
       - uses: actions/checkout@v3
       - name: Install dependencies
@@ -43,15 +71,11 @@ jobs:
       - name: Use gspread
         run: |
           echo "${{ secrets.GSPREAD_KEY }}" | base64 -d > gspread-key.json
-          echo "${{ secrets.WEATHER_API }}" | base64 -d > weather_api.json
-
+          echo "${{ secrets.WEATHER_API }}" | base64 -d > weather_api.json          
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.8'
-  
-      - name: Run test for successful worksheet creation
-        run: pytest -v -k test_for_successful_worksheet_creation
   
       - name: Run test for column names
         run: pytest -v -k test_for_column_names
@@ -61,10 +85,20 @@ jobs:
   
       - name: Run test for data validation
         run: pytest -v -k test_for_data_validation
+
       - name: Check test coverage
         run: pytest test_main.py --cov-config=.coveragerc --cov=main 
-
-
-
+  test connection:
+      needs: build
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - name: Install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install pytest pytest-cov
+        - name: Check test coverage
+          run: pytest test_main.py --cov-config=.coveragerc --cov=main 
 
 
