@@ -21,16 +21,6 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov
 
-  access:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Use gspread
-      run: |
-        echo "${{ secrets.GSPREAD_KEY }}" | base64 -d > gspread-key.json
-        echo "${{ secrets.WEATHER_API }}" | base64 -d > weather_api.json
- 
   test:
     needs: [build, access]
     runs-on: ${{ matrix.os }}
@@ -54,7 +44,7 @@ jobs:
         run: |
           echo "${{ secrets.GSPREAD_KEY }}" | base64 -d > gspread-key.json
           echo "${{ secrets.WEATHER_API }}" | base64 -d > weather_api.json
-                    
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
