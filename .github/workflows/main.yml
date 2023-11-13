@@ -44,35 +44,35 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-        - name: Checkout Code
+      - name: Checkout Code
           uses: actions/checkout@v3
 
-        - name: Set up Python
+      - name: Set up Python
           uses: actions/setup-python@v2
           with:
             python-version: '3.11' 
 
-        - name: Install Poetry
-          run: pip install poetry
+      - name: Install Poetry
+        run: pip install poetry
 
-        - name: Cache Poetry Dependencies
-          uses: actions/cache@v2
-          with:
-            path: ~/.cache/pyproject  
-            key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-            restore-keys: |
-              ${{ runner.os }}-poetry-
+      - name: Cache Poetry Dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pyproject  
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+             ${{ runner.os }}-poetry-
 
-        - name: Install Dependencies
-          run: poetry install
+      - name: Install Dependencies
+        run: poetry install
 
-        - name: Configure Secrets
-          run: |
-            echo "${{ secrets.GSPREAD_KEY }}" | base64 -d > gspread-key.json
-            echo "${{ secrets.WEATHER_API }}" | base64 -d > weather_api.json
+      - name: Configure Secrets
+        run: |
+          echo "${{ secrets.GSPREAD_KEY }}" | base64 -d > gspread-key.json
+          echo "${{ secrets.WEATHER_API }}" | base64 -d > weather_api.json
 
-        - name: Run Test for Successful Worksheet Creation
-          run: poetry run pytest -v -k test_for_successful_worksheet_creation
+      - name: Run Test for Successful Worksheet Creation
+        run: poetry run pytest -v -k test_for_successful_worksheet_creation
   test:
     needs: build
     runs-on: ${{ matrix.os }}
