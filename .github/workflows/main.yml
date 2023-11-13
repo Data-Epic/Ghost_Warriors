@@ -39,18 +39,17 @@ jobs:
         - name: Install Dependencies
           run: poetry install  
 
-
- test_connection:
+  test_connection:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-          uses: actions/checkout@v3
+        uses: actions/checkout@v3
 
       - name: Set up Python
-          uses: actions/setup-python@v2
-          with:
-            python-version: '3.11' 
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11' 
 
       - name: Install Poetry
         run: pip install poetry
@@ -61,7 +60,7 @@ jobs:
           path: ~/.cache/pyproject  
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
-             ${{ runner.os }}-poetry-
+            ${{ runner.os }}-poetry-
 
       - name: Install Dependencies
         run: poetry install
@@ -73,6 +72,7 @@ jobs:
 
       - name: Run Test for Successful Worksheet Creation
         run: poetry run pytest -v -k test_for_successful_worksheet_creation
+
   test:
     needs: build
     runs-on: ${{ matrix.os }}
