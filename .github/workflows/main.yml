@@ -16,7 +16,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-      steps:
+    steps:
         - name: Checkout Code
           uses: actions/checkout@v3
 
@@ -37,13 +37,13 @@ jobs:
               ${{ runner.os }}-poetry-
 
         - name: Install Dependencies
-          run: poetry install
+          run: poetry install  
 
 
  test_connection:
     needs: build
     runs-on: ubuntu-latest
-      steps:
+    steps:
         - name: Checkout Code
           uses: actions/checkout@v3
 
