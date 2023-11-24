@@ -6,7 +6,9 @@ import os
 import logging
 
 def connect_and_create_table():
-    """ Connect to the PostgreSQL database server"""
+    """
+    This function connect to the PostgreSQL database server and creates a table(weather) if does not already exist
+    """
     conn = None
     try:
         params = config()
@@ -23,8 +25,12 @@ def connect_and_create_table():
         if conn is not None:
             conn.close()
 
-#get the values from your gspread data and pass it into a df 
+
 def get_gspread_data():
+    '''
+    This function create a connection to the Google Sheets and creates a list of list of the data in the worksheet
+    
+    '''
     load_dotenv()
     GSPREAD_KEY = os.getenv('PROJECT_KEY')
     # Create a connection to the Google Sheets
@@ -35,13 +41,12 @@ def get_gspread_data():
     data = worksheet.get_all_records()
     return data 
 
-# validation function
+
 def data_validation():
     pass
 
-#insert into the columns with sql
 def insert_into_postgres(data):
-    """ Insert data into PostgreSQL database. """
+    """ THis function inserts data into PostgreSQL database. """
     conn = None
     try:
         params = config()
@@ -67,6 +72,7 @@ def insert_into_postgres(data):
             )
         conn.commit()
         print("Data inserted successfully")
+        
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
