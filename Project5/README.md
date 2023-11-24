@@ -52,5 +52,6 @@ We utilize DBeaver for querying tool. After connecting DBeaver to your PostgreSQ
   ```sql
   SELECT * FROM weather LIMIT 10;
   ```
+<img width="951" alt="Screenshot 2023-11-24 230304" src="https://github.com/Data-Epic/Ghost_Warriors/assets/122959675/112737f3-9d1e-47cf-b837-8ae6861e4001">
 
   This SQL query retrieves the first ten rows from the `weather` table.
