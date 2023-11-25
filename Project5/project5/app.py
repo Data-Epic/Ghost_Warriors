@@ -42,18 +42,46 @@ def get_gspread_data():
     return data 
 
 
-def data_validation():
-    pass
+def validation(data):
+    """
+    This function validates the datatype of each record before loading into PostgreSQL.
 
-def insert_into_postgres(data):
-    """ THis function inserts data into PostgreSQL database. """
+    :param data: This is the list of dictionary for the the data in the excel sheet
+
+    """
+    validated_data = []
+    for record in data:
+        try:
+            
+            valid_record = {
+                'location': str(record['location']),
+                'state': str(record['state']),
+                'country': str(record['country']),
+                'wind_direction': str(record['wind_direction']),
+                'temp_c': float(record['temp_c']),
+                'wind_kph': float(record['wind_kph']),
+                'latitude': float(record['latitude']),
+                'longitude': float(record['longitude']),
+                'timestamp': record['timestamp'] 
+            }
+            validated_data.append(valid_record)
+        except (ValueError, KeyError) as e:
+            print(f"Skipping row due to error: {e}")
+    return validated_data
+
+def insert_into_postgres(validated_data):
+    """ 
+    THis function inserts data into PostgreSQL database. 
+
+    :param validated_data: this is the validated data after the datatype confirmation
+    """
     conn = None
     try:
         params = config()
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
 
-        for record in data:
+        for record in validated_data:
             values = (
                 record['location'],
                 record['state'],
@@ -79,8 +107,8 @@ def insert_into_postgres(data):
         if conn is not None:
             conn.close()
 
-
 if __name__ == '__main__':
     connect_and_create_table()
     data = get_gspread_data()
-    insert_into_postgres(data)
+    validated_data = validation(data)
+    insert_into_postgres(validated_data)
