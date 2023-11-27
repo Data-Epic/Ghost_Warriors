@@ -3,12 +3,15 @@ name = "project-5"
 version = "0.1.0"
 description = ""
 authors = ["\"Humphery_Ufuoma\""]
-readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
 gspread = "^5.12.0"
 psycopg2 = "^2.9.9"
+python-dotenv = "^1.0.0"
+
+[tool.poetry.scripts]
+app = "project_5.python_sql:database_connect_execute"
 
 [build-system]
 requires = ["poetry-core"]

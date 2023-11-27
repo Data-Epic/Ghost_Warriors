@@ -26,7 +26,7 @@ def setup():
     worksheet = spreadsheet.worksheet("Sheet1")
     #get all values from worksheet
     github_data = worksheet.get_all_values()
-    #github_data[1][0] = 1
+    github_data[1][0] = 1
     
     return github_data
 
@@ -59,30 +59,30 @@ def database_connect_execute():
     #get password from environment variable
     PASSWORD = os.getenv("PASSWORD")
     #connect to postgres database
-    with psycopg2.connect(host="localhost",dbname="GspreadData_Storage",
+    with psycopg2.connect(host="localhost",dbname="github_repository_storage",
                         user="postgres",password=PASSWORD,port=5432) as conn:
 
     # Open a cursor to perform database operations
         with conn.cursor() as cur:
 
             #sql function to crreate table if it doesn't exist
-            createTable = """CREATE TABLE IF NOT EXISTS Github_Records(
+            createTable = """CREATE TABLE IF NOT EXISTS github_repo_data(
                 ID SERIAL NOT NULL,
                 Repository_Name VARCHAR(100) NOT NULL,
                 Language_Used VARCHAR(50),
                 Description VARCHAR(200),
-                Datetime_Posted VARCHAR(50) NOT NULL,
+                Created_At VARCHAR(50) NOT NULL,
                 PRIMARY KEY (ID)
             )"""
 
             cur.execute(createTable)
             #sql function to clear table, so that on each run table will be cleared first
-            truncate_table = """TRUNCATE TABLE Github_Records RESTART IDENTITY;"""
+            truncate_table = """TRUNCATE TABLE github_repo_data RESTART IDENTITY;"""
             cur.execute(truncate_table)
             #sql command to insert values into table
-            insert_into_table = """INSERT INTO Github_Records(Repository_Name,
+            insert_into_table = """INSERT INTO github_repo_data(Repository_Name,
                                                             Language_Used, Description,
-                                                            Datetime_Posted)
+                                                            Created_At)
             
                                 VALUES(%s,%s,%s,%s)"""
             github_data = setup()
