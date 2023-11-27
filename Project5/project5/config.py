@@ -1,7 +1,8 @@
 from configparser import ConfigParser
+import os
 
-
-def config(filename='Project5/project5/database.ini', section='postgresql'):
+DATABASE = os.getenv('DATABASE')
+def config(filename=DATABASE, section='postgresql'):
     # create a parser
     parser = ConfigParser()
     # read config file

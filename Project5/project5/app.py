@@ -9,18 +9,19 @@ def connect_and_create_table():
     """
     This function connect to the PostgreSQL database server and creates a table(weather) if does not already exist
     """
+    CREATE_TABLE = os.getenv('CREATE_TABLE')
     conn = None
     try:
         params = config()
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
-        with open ('Project5/project5/create_table.sql', 'r') as file:
+        with open (CREATE_TABLE, 'r') as file:
             create_table_sql = file.read()
         cur.execute(create_table_sql)
         conn.commit()
-        print('Table created successfully')
+        logging.info('Table created successfully')
     except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
+        logging.info(error)
     finally:
         if conn is not None:
             conn.close()
@@ -52,7 +53,6 @@ def validation(data):
     validated_data = []
     for record in data:
         try:
-            
             valid_record = {
                 'location': str(record['location']),
                 'state': str(record['state']),
@@ -66,7 +66,7 @@ def validation(data):
             }
             validated_data.append(valid_record)
         except (ValueError, KeyError) as e:
-            print(f"Skipping row due to error: {e}")
+            logging.info(f"Skipping row due to error: {e}")
     return validated_data
 
 def insert_into_postgres(validated_data):
@@ -75,6 +75,7 @@ def insert_into_postgres(validated_data):
 
     :param validated_data: this is the validated data after the datatype confirmation
     """
+    INSERT_TABLE = os.getenv('INSERT_TABLE')
     conn = None
     try:
         params = config()
@@ -93,13 +94,13 @@ def insert_into_postgres(validated_data):
                 record['longitude'],
                 record['timestamp'] if record['timestamp'] else None
             )
-            with open('Project5/project5/insert_values.sql', 'r') as file:
+            with open(INSERT_TABLE, 'r') as file:
                 insert_values_sql = file.read()
             cur.execute(
                 insert_values_sql, values
             )
         conn.commit()
-        print("Data inserted successfully")
+        logging.info("Data inserted successfully")
         
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
