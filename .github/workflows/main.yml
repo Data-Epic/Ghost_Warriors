@@ -1,57 +1,151 @@
-name: continuous_integration
+name: CI Pipeline
+on:
+  push:
+    branches:
+      - github_actions
+  pull_request:
+    branches:
+      - github_actions
+  workflow_dispatch:
 
-on: push
-
+env:
+  weather_api: ${{ secrets.WEATHER_API }}
+  api_key: ${{ secrets.GSPREAD_KEY }}
+ 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+        - name: Checkout Code
+          uses: actions/checkout@v3
+
+        - name: Set up Python
+          uses: actions/setup-python@v2
+          with:
+            python-version: '3.11'
+
+        - name: Install Poetry
+          run: pip install poetry
+
+        - name: Cache Poetry Dependencies
+          uses: actions/cache@v2
+          with:
+            path: ~/.cache/pyproject
+            key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+            restore-keys: |
+              ${{ runner.os }}-poetry-
+
+        - name: Install Dependencies
+          run: poetry install  
+
+  test_connection:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-      
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11' 
+
       - name: Install Poetry
         run: pip install poetry
-      
+
+      - name: Cache Poetry Dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pyproject  
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
       - name: Install Dependencies
         run: poetry install
 
+      - name: Configure Secrets
+        run: |
+          echo "${{ secrets.GSPREAD_KEY }}" | base64 -d > gspread-key.json
+          echo "${{ secrets.WEATHER_API }}" | base64 -d > weather_api.json
+
+      - name: Run Test for Successful Worksheet Creation
+        run: poetry run pytest -v -k test_for_successful_worksheet_creation
+
   test:
-    runs-on: ubuntu-latest
     needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.9", "3.10", "3.11"]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-      - name: Setup Python
-        uses: actions/setup-python@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Install Poetry
         run: pip install poetry
-      
-      - name: Install Dependencies
-        run: 
-          poetry install
 
-      - name: test_script
-        run: poetry run pytest
-  
-  coverage:
+      - name: Cache Poetry Dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pyproject
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install Dependencies
+        run: poetry install
+
+      - name: Configure Secrets
+        run: |
+          echo "${{ secrets.GSPREAD_KEY }}" | base64 -d > gspread-key.json
+          echo "${{ secrets.WEATHER_API }}" | base64 -d > weather_api.json
+
+      - name: Run Test for Column Names
+        run: poetry run pytest -v -k test_for_column_names
+
+      - name: Run Test for Column Datatypes
+        run: poetry run pytest -v -k test_for_column_datatypes
+
+      - name: Run Test for Data Validation
+        run: poetry run pytest -v -k test_for_data_validation
+
+  test_coverage:
+    needs: [test_connection, test]
     runs-on: ubuntu-latest
-    needs: [build,test]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-      - name: Setup Python
-        uses: actions/setup-python@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
 
       - name: Install Poetry
         run: pip install poetry
-      
+
+      - name: Cache Poetry Dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pyproject
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
       - name: Install Dependencies
-        run: | 
-            poetry install
-      
-      - name: code_coverage
-        run: poetry run pytest --cov=gspread_code --cov=test_gspread_code 
+        run: poetry install
+
+      - name: Configure Secrets
+        run: |
+          echo "${{ secrets.GSPREAD_KEY }}" | base64 -d > gspread-key.json
+          echo "${{ secrets.WEATHER_API }}" | base64 -d > weather_api.json
+
+      - name: Check Test Coverage
+        run: poetry run pytest --cov-config=.coveragerc --cov=main test_main.py
