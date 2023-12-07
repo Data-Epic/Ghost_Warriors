@@ -1,5 +1,4 @@
 name: CI Pipeline
-
 on:
   push:
     branches:
@@ -12,7 +11,7 @@ on:
 env:
   weather_api: ${{ secrets.WEATHER_API }}
   api_key: ${{ secrets.GSPREAD_KEY }}
-
+ 
 jobs:
   build:
     runs-on: ubuntu-latest
