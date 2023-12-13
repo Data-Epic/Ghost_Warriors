@@ -1,0 +1,95 @@
+name: Test_suite
+on:
+  push:
+    branches:
+      - sql_alchemy
+  pull_request:
+    branches:
+      - sql_alchemy
+  workflow_dispatch:
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Checkout Code
+          uses: actions/checkout@v3
+
+        - name: Set up Python
+          uses: actions/setup-python@v2
+          with:
+            python-version: '3.11'
+
+        - name: Install Poetry
+          run: pip install poetry
+
+        - name: Cache Poetry Dependencies
+          uses: actions/cache@v2
+          with:
+            path: ~/.cache/pyproject
+            key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+            restore-keys: |
+              ${{ runner.os }}-poetry-
+
+        - name: Install Dependencies
+          run: poetry install  
+
+  test:
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.9", "3.10", "3.11"]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Cache Poetry Dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pyproject
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Run Test for Data Validation
+        run: poetry run pytest
+
+  test_coverage:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Cache Poetry Dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pyproject
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install Dependencies
+        run: poetry install
+
+      - name: Check Test Coverage
+        run: poetry run pytest --cov-config=.coveragerc --cov=main test_main.py
