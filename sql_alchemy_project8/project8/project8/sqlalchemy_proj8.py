@@ -20,12 +20,11 @@ logging.basicConfig(filename=PATH_ERROR, level=logging.ERROR,
 # columns to be loaded in from data
 columns = ["DisplayName", "ArtistBio", "Nationality", "Gender", "BeginDate", "EndDate"]
 artist_df = pd.read_csv('Artists.csv', usecols=[col for col in columns])
-
 columns2 = ['Artist', 'ConstituentID', 'ArtistBio', 'Nationality',
             'Gender', 'Medium', 'Dimensions', 'CreditLine',
             'AccessionNumber', 'Classification', 'Department',
             'Cataloged', 'ObjectID']
-artwork_df = pd.read_csv(ARTWORK_CSV, usecols=[col for col in columns2])
+artwork_df = pd.read_csv(ARTWORK_CSV, usecols=[col for col in columns2],low_memory=False)
 
 
 # connecting to database
@@ -34,7 +33,7 @@ def create_database_engine(postgres_key):
     this function creates a database engine
     '''
     try:
-        database_engine = create_engine(postgres_key, echo=True)
+        database_engine = create_engine(postgres_key)
         logging.info("Database engine created successfully.")
         return database_engine
     except Exception as e:
@@ -48,9 +47,8 @@ Base = declarative_base()
 
 
 # creating table in database
-
 class Artist(Base):
-    __tablename__ = "Artist"
+    __tablename__ = "artist"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     DisplayName: Mapped[str] = mapped_column(primary_key=True)
@@ -102,27 +100,22 @@ def validate_artist_df(data_):
     # creating copy of data
     data = data_.copy()
 
+    str_columns = ["DisplayName", "ArtistBio", "Nationality", "Gender"]
     # loop through data and check if each is of expected data type
     for num in range(len(data)):
-        if (
-                isinstance(data.loc[num, "DisplayName"], str) and
-                isinstance(data.loc[num, "ArtistBio"], str) and
-                isinstance(data.loc[num, "Nationality"], str) and
-                isinstance(data.loc[num, "Gender"], str) and
-                all(data.loc[num, :].notna())
-        ):
-
+        validation_condition = all(isinstance(data.loc[num, col], str) for col in str_columns) and all(data.loc[num, :].notna())
+        if validation_condition:
             try:
+                #attempt to cast columns to int datatype
                 data.loc[num, ['BeginDate', 'EndDate']] = data.loc[num, ['BeginDate', 'EndDate']].astype(int)
             except:
                 data = data.drop(index=num)
-
+                #logging error message
                 logging.error(f"Invalid Data Type in row")
-                continue
         else:
             data = data.drop(index=num)
             logging.error(f"Invalid Data Type in row")
-
+    data[['BeginDate','EndDate']] = data[['BeginDate','EndDate']].astype(int)
     return data.reset_index(drop=True)
 
 
@@ -221,38 +214,38 @@ def update_database_with_artwork():
 def query_database():
     """Queries Database to get 
     insight from Data"""
-    print("Queries for DataBase")
-    print()
+    logging.info("Queries for DataBase")
+    logging.info("")
     with Session(engine) as session:
         # get 5 rows of data
         sample_query = select(Artist).limit(5)
         result_sample = session.execute(sample_query).fetchall()
-        print()
-        print(f"Sample of records: \n {result_sample}")
+        logging.info("")
+        logging.info(f"Sample of records: \n {result_sample}")
 
         # get 5 rows of data where nationality is American
         filter_query = select(Artist).where(Artist.Nationality == "American").limit(5)
         result_filtered = session.execute(filter_query).fetchall()
-        print()
-        print(f"Filtered records: \n {result_filtered}")
+        logging.info("")
+        logging.info(f"Filtered records: \n {result_filtered}")
 
         # order data by begin date and get 5 rows
         order_query = select(Artist).order_by(Artist.BeginDate).limit(5)
         result_ordered = session.execute(order_query).fetchall()
-        print()
-        print(f"Ordered records: \n {result_ordered}")
+        logging.info("")
+        logging.info(f"Ordered records: \n {result_ordered}")
 
         # get 5 rows of male artists
         order_query = select(Artist).where(Artist.Gender == 'Male').limit(5)
         result_ordered = session.execute(order_query).fetchall()
-        print()
-        print(f"Ordered records: \n {result_ordered}")
+        logging.info("")
+        logging.info(f"Ordered records: \n {result_ordered}")
 
         # get 5 rows of female artists
         order_query = select(Artist).where(Artist.Gender == 'Female').limit(5)
         result_ordered = session.execute(order_query).fetchall()
-        print()
-        print(f"Ordered records: \n {result_ordered}")
+        logging.info("")
+        logging.info(f"Ordered records: \n {result_ordered}")
 
 
 if __name__ == "__main__":
