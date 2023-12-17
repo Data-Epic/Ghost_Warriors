@@ -1,4 +1,4 @@
 .env
 *.csv
 *.log
-
+.pytest_cache

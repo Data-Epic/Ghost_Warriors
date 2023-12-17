@@ -1,6 +1,5 @@
-from sqlalchemy.orm import Session, Mapped, declarative_base, relationship, mapped_column
-from sqlalchemy import create_engine, insert, Index, select, Integer, Column, String, PrimaryKeyConstraint, ForeignKey
-from typing import Optional
+from sqlalchemy.orm import Session, declarative_base
+from sqlalchemy import create_engine, Index, select, Integer, Column, String, PrimaryKeyConstraint
 from sqlalchemy.exc import IntegrityError
 import pandas as pd
 from dotenv import load_dotenv
@@ -12,28 +11,30 @@ load_dotenv()
 PATH_ERROR = os.getenv("PATH_ERROR")
 POSTGRES_KEY = os.getenv("POSTGRES_KEY")
 PATH_DATA = os.getenv("PATH_DATA")
-ARTWORK_CSV = os.getenv('ARTWORK_CSV')
+ARTWORKS_CSV = os.getenv('ARTWORK_CSV')
+ARTISTS_CSV = os.getenv('ARTIST_CSV')
 
 logging.basicConfig(filename=PATH_ERROR, level=logging.ERROR,
                     format='%(levelname)s (%(asctime)s) : %(message)s (%(lineno)d)')
 
 # columns to be loaded in from data
-columns = ["DisplayName", "ArtistBio", "Nationality", "Gender", "BeginDate", "EndDate"]
-artist_df = pd.read_csv('Artists.csv', usecols=[col for col in columns])
-columns2 = ['Artist', 'ConstituentID', 'ArtistBio', 'Nationality',
-            'Gender', 'Medium', 'Dimensions', 'CreditLine',
-            'AccessionNumber', 'Classification', 'Department',
-            'Cataloged', 'ObjectID']
-artwork_df = pd.read_csv(ARTWORK_CSV, usecols=[col for col in columns2],low_memory=False)
+artist_columns = ["DisplayName", "ArtistBio", "Nationality", "Gender", "BeginDate", "EndDate"]
+artist_df = pd.read_csv(ARTISTS_CSV, usecols=[col for col in artist_columns])
+
+artwork_columns = ['Artist', 'ConstituentID', 'ArtistBio', 'Nationality',
+                   'Gender', 'Medium', 'Dimensions', 'CreditLine',
+                   'AccessionNumber', 'Classification', 'Department',
+                   'Cataloged', 'ObjectID']
+artwork_df = pd.read_csv(ARTWORKS_CSV, usecols=[col for col in artwork_columns])
 
 
 # connecting to database
 def create_database_engine(postgres_key):
     '''
-    this function creates a database engine
+    This function creates a database engine
     '''
     try:
-        database_engine = create_engine(postgres_key)
+        database_engine = create_engine(postgres_key, echo=True)
         logging.info("Database engine created successfully.")
         return database_engine
     except Exception as e:
@@ -47,16 +48,17 @@ Base = declarative_base()
 
 
 # creating table in database
+
 class Artist(Base):
     __tablename__ = "artist"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    DisplayName: Mapped[str] = mapped_column(primary_key=True)
-    ArtistBio: Mapped[str]
-    Nationality: Mapped[Optional[str]]
-    Gender: Mapped[Optional[str]]
-    BeginDate = mapped_column(Integer)
-    EndDate = mapped_column(Integer)
+    id = Column(Integer, primary_key=True)
+    DisplayName = Column(String, primary_key=True, unique=True)
+    ArtistBio = Column(String)
+    Nationality = Column(String)
+    Gender = Column(String)
+    BeginDate = Column(Integer)
+    EndDate = Column(Integer)
 
     __table_args__ = (
         Index('my_index', "Nationality", "Gender", postgresql_using='btree'),
@@ -67,9 +69,9 @@ class Artist(Base):
 
 
 class Artwork(Base):
-    __tablename__ = "Artwork"
+    __tablename__ = "artwork"
 
-    Artist = Column(String)
+    Artist = Column(String)  # , ForeignKey('artist.DisplayName')
     ConstituentID = Column(String)
     ArtistBio = Column(String)
     Nationality = Column(String)
@@ -93,7 +95,7 @@ Base.metadata.create_all(engine)
 
 
 def validate_artist_df(data_):
-    """function checks that each
+    """This function checks that each
     element in each row is of expected
     datatype """
 
@@ -103,54 +105,70 @@ def validate_artist_df(data_):
     str_columns = ["DisplayName", "ArtistBio", "Nationality", "Gender"]
     # loop through data and check if each is of expected data type
     for num in range(len(data)):
-        validation_condition = all(isinstance(data.loc[num, col], str) for col in str_columns) and all(data.loc[num, :].notna())
+        validation_condition = all(isinstance(data.loc[num, col], str) for col in str_columns) and all(
+            data.loc[num, :].notna())
         if validation_condition:
             try:
-                #attempt to cast columns to int datatype
+                # attempt to cast columns to int datatype
                 data.loc[num, ['BeginDate', 'EndDate']] = data.loc[num, ['BeginDate', 'EndDate']].astype(int)
             except:
                 data = data.drop(index=num)
-                #logging error message
-                logging.error(f"Invalid Data Type in row")
+                # logging error message
+                logging.debug(f"Invalid Data Type in row")
         else:
             data = data.drop(index=num)
             logging.error(f"Invalid Data Type in row")
-    data[['BeginDate','EndDate']] = data[['BeginDate','EndDate']].astype(int)
+    data[['BeginDate', 'EndDate']] = data[['BeginDate', 'EndDate']].astype(int)
     return data.reset_index(drop=True)
 
 
 def validate_artwork_data(data_):
     """Function checks that each element in each row is of expected datatype."""
     data = data_.copy()
+    invalid_rows = []
 
     for num in range(len(data)):
         try:
-            if data.loc[num, :].notna().all():
-                if (
-                        isinstance(data.loc[num, "Artist"], str) and
-                        isinstance(data.loc[num, "ConstituentID"], (str, int)) and
-                        isinstance(data.loc[num, "ArtistBio"], str) and
-                        isinstance(data.loc[num, "Nationality"], str) and
-                        isinstance(data.loc[num, "Gender"], str) and
-                        isinstance(data.loc[num, "Medium"], str) and
-                        isinstance(data.loc[num, "CreditLine"], str) and
-                        isinstance(data.loc[num, "AccessionNumber"], str) and
-                        isinstance(data.loc[num, "Classification"], str) and
-                        isinstance(data.loc[num, "Department"], str) and
-                        isinstance(data.loc[num, "ObjectID"], str)
-                ):
-                    data.loc[num, ['Dimensions', 'Cataloged']] = data.loc[num, ['Dimensions', 'Cataloged']].astype(str)
-                else:
-                    data = data.drop(index=num)
-                    logging.error(f"Invalid Data Type in row {num}")
+            # Check if all values in the row are not NaN
+            if not data.loc[num, :].notna().all():
+                invalid_rows.append(num)
+                logging.debug(f"NaN values in row {num}")
+                continue
+
+            data_types = {
+                'Artist': str,
+                'ConstituentID': (str, int),  # Allowing either str or int
+                'ArtistBio': str,
+                'Nationality': str,
+                'Gender': str,
+                'Medium': str,
+                'CreditLine': str,
+                'AccessionNumber': str,
+                'Classification': str,
+                'Department': str,
+                'ObjectID': str
+            }
+
+            # Check if all values are of the correct type
+            for col, data_type in data_types.items():
+                if not isinstance(data.at[num, col], data_type if not isinstance(data_type, tuple) else data_type[0]):
+                    if isinstance(data_type, tuple) and not isinstance(data.at[num, col], data_type[1]):
+                        invalid_rows.append(num)
+                        logging.debug(f"Invalid Data Type in row {num} for column {col}")
+                        break
             else:
-                data = data.drop(index=num)
-                logging.error(f"NaN values in row {num}")
+                # If the types are correct, ensure 'Dimensions' and 'Cataloged' are strings
+                data.loc[num, ['Dimensions', 'Cataloged']] = data.loc[num, ['Dimensions', 'Cataloged']].astype(str)
+
         except Exception as e:
-            data = data.drop(index=num)
+            invalid_rows.append(num)
             logging.error(f"Error processing row {num}: {str(e)}")
 
-    return data.reset_index(drop=True)
+    # Drop all invalid rows at once
+    data = data.drop(index=invalid_rows).reset_index(drop=True)
+
+    return data
+
 
 def update_database():
     """Updates Database table Artist
@@ -179,14 +197,18 @@ def update_database():
                 session.commit()
 
             except IntegrityError as e:
-                session.rollback()  # Rollback the session to avoid partial commits
+                session.rollback()
                 print(f"Skipping row with DisplayName '{data.DisplayName}' due to duplicate key.")
 
 
 def update_database_with_artwork():
-    artwork = artwork_df
+    """Updates Database table artwork
+       with validated data from Dataframe"""
+    artwork = validate_artwork_data(artwork_df)
 
     with Session(engine) as session:
+        session.query(Artwork).delete()
+        session.commit()
         for num, data in artwork.iterrows():
             if pd.isna(data['AccessionNumber']) or pd.isna(data['ObjectID']):
                 continue
@@ -207,7 +229,6 @@ def update_database_with_artwork():
                 ObjectID=data['ObjectID']
             )
             session.add(row)
-
             session.commit()
 
 
@@ -215,36 +236,36 @@ def query_database():
     """Queries Database to get 
     insight from Data"""
     logging.info("Queries for DataBase")
-    logging.info("")
+    logging.info('')
     with Session(engine) as session:
         # get 5 rows of data
         sample_query = select(Artist).limit(5)
         result_sample = session.execute(sample_query).fetchall()
-        logging.info("")
+        logging.info('')
         logging.info(f"Sample of records: \n {result_sample}")
 
         # get 5 rows of data where nationality is American
         filter_query = select(Artist).where(Artist.Nationality == "American").limit(5)
         result_filtered = session.execute(filter_query).fetchall()
-        logging.info("")
+        logging.info('')
         logging.info(f"Filtered records: \n {result_filtered}")
 
         # order data by begin date and get 5 rows
         order_query = select(Artist).order_by(Artist.BeginDate).limit(5)
         result_ordered = session.execute(order_query).fetchall()
-        logging.info("")
+        logging.info('')
         logging.info(f"Ordered records: \n {result_ordered}")
 
         # get 5 rows of male artists
         order_query = select(Artist).where(Artist.Gender == 'Male').limit(5)
         result_ordered = session.execute(order_query).fetchall()
-        logging.info("")
+        logging.info('')
         logging.info(f"Ordered records: \n {result_ordered}")
 
         # get 5 rows of female artists
         order_query = select(Artist).where(Artist.Gender == 'Female').limit(5)
         result_ordered = session.execute(order_query).fetchall()
-        logging.info("")
+        logging.info('')
         logging.info(f"Ordered records: \n {result_ordered}")
 
 
